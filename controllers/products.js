@@ -4,6 +4,8 @@ const _ = require("lodash");
 // import {get} from "lodash";
 
 const Joi = require("joi");
+var jwt = require('jsonwebtoken');
+var config = require("../config")
 
 const createProduct = function (req, res, next) {
     //     return res.send({test:isNaN(_.get(req,"body.price")),
@@ -13,7 +15,7 @@ const createProduct = function (req, res, next) {
     //     return res.status(422).send({ err: "price should be a number" });
     //   } //we are validating the code
 
-    //joi code
+    //joi code 
     const schema = Joi.object().keys({
         title: Joi.string().max(150).required(),
         price: Joi.number().required(),
@@ -97,12 +99,23 @@ const updateProduct = function (req, res, next) {
         return res.send(data);
     })
 }
-
+  
 // delete data using delete command
 
 const deleteProduct = function (req, res, next) {
 
     const id = _.get(req, "params.id", null);
+    const authorization = req.headers.authorization;
+    if(!authorization){
+        return res.send({success:false , message: "You are not Authorized to perform this action"})
+    }
+    const token = authorization.split("Bearer"); 
+    const decoded = jwt.verify(token[1],config.JWT_SECRET);
+    if(decoded.role != "administrator"){
+        return res.send({success:false , message: "You are not Authorized to perform this action"})
+    }
+    return res.send({success:true, decoded: decoded})
+    // return res.send({success:true})
     
     ProductModel.findByIdAndDelete(id, function (err, data) {
         if (err) {
